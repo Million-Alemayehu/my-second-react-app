@@ -6,21 +6,24 @@ const API_BASE_URL = 'https://api.themoviedb.org/3';
 const API_KEY = import.meta.env.VITE_TMDB_API_KEY;
 
 const API_OPTIONS = {
-  method: 'GET',
-  headers: {
-    Accept: 'application/json',
-    Authorization: `Bearer ${API_KEY}`
-  }
+  method: 'GET'
 }
+
 
 const App = () => {
   const [searchTerm, setSearchTerm] = useState('');
-
   const [errorMessage, setErrorMessage] = useState('');
-  
+  const [moviesList, setMoviesList] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+
   const fetchMovies = async () => {
+    setIsLoading(true);
+    setErrorMessage('');
+
     try {
-      const endpoint = `${API_BASE_URL}/discover/movie?sort_by=popularity.desc`;
+      const endpoint =
+  `${API_BASE_URL}/discover/movie?sort_by=popularity.desc&api_key=${API_KEY}`;
+
 
       const response = await fetch(endpoint, API_OPTIONS);
 
@@ -30,11 +33,19 @@ const App = () => {
 
       const data = await response.json();
 
-      console.log(data);
+      if(data.Response === 'False'){
+        setErrorMessage(data.status_message || 'Failed to fetch movies');
+        setMoviesList([]);
+        return;
+      }
+
+      setMoviesList(data.result||[]);
       
     } catch (error) {
       console.error('Error fetching movies:', error);
       setErrorMessage('Failed to fetch movies. Please try again later.');
+    }finally{
+      setIsLoading(false);
     }
   }
 
@@ -55,7 +66,19 @@ const App = () => {
         <section className='all-movies'>
           <h2>All Movies</h2>
 
-          {errorMessage && <p className="text-red-500">{errorMessage}</p>}
+          {isLoading ? (
+            <p className='text-white'>Loading...</p>
+          ): errorMessage ? (
+            <p className='text-red-500'>{errorMessage}</p>
+          ):(
+            <ul>
+              {moviesList.map((movies) => (
+                <li key ={movies.id}>
+                  <p className='text-white'>{movies.title}</p>
+                </li>
+              ))}
+            </ul>
+          )}
           
         </section>
         
